@@ -16,23 +16,6 @@ async function getRecords (options = {}) {
   return kintoneRecordService.get("records.json", { params })
 }
 
-function getAllRecord(opt_last_record_id = '', opt_records = []) {
-  const recordLimit = 100;
-  var records = opt_records;
-  var query = opt_last_record_id ? '$id > ' + opt_last_record_id : '';
-  query += ` order by $id asc limit ${ recordLimit }`;
-  var params = {
-    query: query
-  };
-  return getRecords(params).then(function({ data: resp }) {
-    records = records.concat(resp.records);
-    if (resp.records.length === recordLimit) {
-      return getAllRecord(resp.records[resp.records.length - 1].$id.value, records);
-    }
-    return records;
-  });
-};
-
 async function updateRecords (records = {}) {
   var actions = [];
   const recordLimit = 100;
@@ -69,4 +52,4 @@ async function getFields (options = {}) {
   return kintoneRecordService.get("app/form/fields.json", { params });
 };
 
-module.exports = { getRecords, updateRecords, getFields, getAllRecord, createRecords };
+module.exports = { getRecords, updateRecords, getFields, createRecords };
