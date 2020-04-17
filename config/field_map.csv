@@ -1,0 +1,7 @@
+externalField,recordField
+objectId,objectId
+cases,cases
+deaths,deaths
+recovered,recovered
+date.iso,dateTime
+countryName,countryName
