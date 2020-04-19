@@ -1,5 +1,5 @@
-const axios = require('axios');
-const config = require('../config')
+import axios from 'axios'
+import config from '../config'
 
 const fetchData = async (options = {}) => {
   const params = { ...options }
@@ -11,7 +11,7 @@ const fetchData = async (options = {}) => {
       },
       params
     }
-  );
-};
+  )
+}
 
-module.exports = { fetchData };
+module.exports = { fetchData }

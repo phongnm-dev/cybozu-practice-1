@@ -1,28 +1,71 @@
-const config = require("./config");
-const recordService = require("./record/service");
-const fieldService = require("./field/service");
-const fieldParser = require("./field/parser");
-const fieldValidator = require("./field/validator");
+import ExternalService from './services/external_service'
+import KintoneService from './services/kintone_service'
+import config from './config'
+import recordParser from './record/parser'
+import recordValidator from './record/validator'
+import logger from './logger'
+import { MISSING_FIELD_MESSAGE, SYNC_SUCCESS_MESSAGE } from './constants'
 
-async function main() {
+async function main () {
   try {
-    var response = await Promise.all([
-      recordService.getExternalRecords(),
-      fieldService.getFields()
+    const response = await Promise.all([
+      getExternalData(),
+      KintoneService.getFields()
     ])
-    var [externalRecords, fields] = response;
-  } catch(error) {
-    console.log(error);
-    return;
-  }
-  var mappingRecords = fieldParser.mappingField(externalRecords, config.mappingFields);
-  mappingRecords = fieldValidator.removeMissingRequired(mappingRecords, fields)
-  try {
-    await recordService.migrateRecords(mappingRecords, fields);
-    console.log("Sync data success");
-  } catch (error) {
-    console.log(error)
-  }
-};
+    var [externalData, fields] = response
 
-main();
+    let mappingRecords = externalData.map(data => {
+      return recordParser.mappingRecord(data, config.mappingFields)
+    })
+
+    const requiredFields = fields.filter((field) => {
+      return field.required
+    })
+    mappingRecords = mappingRecords.filter((record) => {
+      const missingField = recordValidator.validateRequired(record, requiredFields)
+      if (missingField) {
+        logger.writeLog(MISSING_FIELD_MESSAGE(missingField, JSON.stringify(record)))
+        return false
+      }
+      return true
+    })
+
+    await syncData(mappingRecords, fields)
+    logger.printLog(SYNC_SUCCESS_MESSAGE)
+  } catch (error) {
+    logger.printLog(error)
+  }
+}
+
+async function syncData (records, fields) {
+  const updateRecords = []
+  const createRecords = []
+  let kintoneRecords = []
+  const uniqueFields = fields.filter((field) => { return field.unique })
+  kintoneRecords = await KintoneService.getAllRecords()
+  records.forEach((record) => {
+    const existField = recordValidator.validateUniqueField(record, kintoneRecords, uniqueFields)
+    if (existField) {
+      delete record[existField.field]
+      updateRecords.push({
+        updateKey: existField,
+        record: record
+      })
+    } else {
+      createRecords.push(record)
+    }
+  })
+
+  const actions = []
+  if (updateRecords.length) actions.push(KintoneService.updateRecords(updateRecords))
+  if (createRecords.length) actions.push(KintoneService.createRecords(createRecords))
+
+  return Promise.all(actions)
+}
+
+async function getExternalData () {
+  const { data: { results: externalRecords } } = await ExternalService.fetchData()
+  return externalRecords
+}
+
+main()
