@@ -7,20 +7,20 @@ function validateRequired (record, requiredFields) {
   return false
 }
 
-function validateUniqueField (record, records, uniqueFields) {
+function validateUniqueField (record, kintoneRecords, uniqueFields) {
   for (const field of uniqueFields) {
-    const existRecords = records.filter(
+    const existRecords = kintoneRecords.filter(
       (item) => {
         return item[field.code] &&
           item[field.code].value === record[field.code].value
       }
     )
     if (existRecords.length) {
-      const updateKey = {
+      const existField = {
         field: field.code,
         value: record[field.code].value
       }
-      return updateKey
+      return existField
     }
   }
   return false

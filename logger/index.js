@@ -2,7 +2,8 @@ import fs from 'fs'
 import { LOG_PATH } from '../constants'
 
 function writeLog (content) {
-  fs.appendFile(LOG_PATH, `${content}\r\n`, (err) => {
+  const message = `${content}\r\n`
+  fs.appendFile(LOG_PATH, message, (err) => {
     if (err) {
       console.log(err)
     }

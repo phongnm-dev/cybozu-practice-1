@@ -37,13 +37,13 @@ async function main () {
   }
 }
 
-async function syncData (records, fields) {
+async function syncData (externalRecords, fields) {
   const updateRecords = []
   const createRecords = []
   let kintoneRecords = []
   const uniqueFields = fields.filter((field) => { return field.unique })
   kintoneRecords = await KintoneService.getAllRecords()
-  records.forEach((record) => {
+  externalRecords.forEach((record) => {
     const existField = recordValidator.validateUniqueField(record, kintoneRecords, uniqueFields)
     if (existField) {
       delete record[existField.field]
